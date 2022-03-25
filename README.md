@@ -1,4 +1,4 @@
-# scheduler
+# Distributed scheduler
 
 Tiny distributed scheduler.
 You need to implement persistent lock storage in order to use it (or use the provided mongodb storage provider).
