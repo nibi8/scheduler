@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 
 	"github.com/nibi8/scheduler"
 	"github.com/nibi8/scheduler/models"
@@ -21,7 +22,10 @@ func main() {
 
 	// connect to mongodb
 	constr := "mongodb://localhost:27017"
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(constr))
+	opts := options.Client().ApplyURI(constr)
+	// recommended option to prevent collisions
+	opts = opts.SetWriteConcern(writeconcern.New(writeconcern.WMajority()))
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		log.Fatal("mongo.Connect")
 	}
