@@ -1,23 +1,11 @@
 # Distributed scheduler
 
 Tiny distributed scheduler.
-You need to implement persistent lock storage in order to use it (or use the provided mongodb storage provider).
+For distributed locks, dlocker package is used.
 
 ## Scheme
 
-Job "super-job" with 5 min duration:
-
-```
-Instace 1: [set lock success] [running within the duration of the lock (5 minutes)] [try set lock] ...
-```
-
-Must complete execution before the lock expires.
-
-```
-Instace 2:       [set lock fail] [sleep during lock (5 min)                       ] [try set lock] ...
-```
-
-Execution of other jobs is not affected.
+Execute action during lock period.
 
 ## Usage
 
@@ -27,10 +15,16 @@ Create storage provider. Implement `StorageProvider` interface for you persisten
 sp, err := mongosp.NewStorageProvider(ctx, db, "scheduler")
 ```
 
+Create locker
+
+```go
+locker := dlocker.NewLocker(sp)
+```
+
 Create scheduler
 
 ```go
-schedulerSvc := scheduler.NewScheduler(sp)
+schedulerSvc := scheduler.NewScheduler(locker)
 ```
 
 Create job

@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nibi8/dlocker"
+	lockmodels "github.com/nibi8/dlocker/models"
+
 	"github.com/nibi8/scheduler/models"
 )
 
@@ -17,14 +20,14 @@ import (
 // Execution of other jobs is not affected.
 
 type SchedulerImp struct {
-	storage *Storage
+	locker dlocker.Locker
 }
 
 func NewScheduler(
-	sp StorageProvider,
-) Scheduler {
+	locker dlocker.Locker,
+) *SchedulerImp {
 	svc := SchedulerImp{
-		storage: NewStorage(sp),
+		locker: locker,
 	}
 	return &svc
 }
@@ -32,13 +35,18 @@ func NewScheduler(
 func (s *SchedulerImp) RunJob(
 	ctx context.Context,
 	job models.Job,
-) {
+) (err error) {
+	lock, err := job.ToLock()
+	if err != nil {
+		return err
+	}
+
 	// todo: ? catch panic
 	go func() {
 		for {
-			err := s.storage.SetLock(ctx, job)
+			_, _, err := s.locker.LockWithWait(ctx, lock)
 			if err != nil {
-				if errors.Is(err, models.ErrNoLuck) {
+				if errors.Is(err, lockmodels.ErrNoLuck) {
 					// no luck
 					// continue
 				} else {
@@ -60,6 +68,8 @@ func (s *SchedulerImp) RunJob(
 			}
 		}
 	}()
+
+	return nil
 }
 
 func (s *SchedulerImp) runJobAction(

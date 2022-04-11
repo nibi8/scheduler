@@ -6,14 +6,17 @@ import (
 	"testing"
 
 	"github.com/nibi8/scheduler/models"
-	"github.com/nibi8/scheduler/storageproviders/testsp"
+	
+	"github.com/nibi8/dlocker"
+	"github.com/nibi8/dlocker/storageproviders/testsp"
 )
 
 // todo: add tests
 
 func TestNewScheduler(t *testing.T) {
 	sp := testsp.NewStorageProvider()
-	sc := NewScheduler(sp)
+	locker := dlocker.NewLocker(sp)
+	sc := NewScheduler(locker)
 
 	job, err := models.NewJobEx(
 		"unique-job-name",
@@ -31,5 +34,8 @@ func TestNewScheduler(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	sc.RunJob(ctx, job)
+	err = sc.RunJob(ctx, job)
+	if err != nil {
+		t.Error(err)
+	}
 }

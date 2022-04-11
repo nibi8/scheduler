@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"os"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -13,7 +14,9 @@ import (
 
 	"github.com/nibi8/scheduler"
 	"github.com/nibi8/scheduler/models"
-	"github.com/nibi8/scheduler/storageproviders/mongosp"
+
+	"github.com/nibi8/dlocker"
+	"github.com/nibi8/dlocker/storageproviders/mongosp"
 )
 
 func main() {
@@ -22,6 +25,12 @@ func main() {
 
 	// connect to mongodb
 	constr := "mongodb://localhost:27017"
+
+	constrEnv, envFound := os.LookupEnv("MONGO_CON_STR")
+	if envFound {
+		constr = constrEnv
+	}
+
 	opts := options.Client().ApplyURI(constr)
 	// recommended option to prevent collisions
 	opts = opts.SetWriteConcern(writeconcern.New(writeconcern.WMajority()))
@@ -49,8 +58,11 @@ func main() {
 		log.Fatal("mongosp.NewStorageProvider")
 	}
 
+	// create locker
+	locker := dlocker.NewLocker(sp)
+
 	// create scheduler
-	schedulerSvc := scheduler.NewScheduler(sp)
+	schedulerSvc := scheduler.NewScheduler(locker)
 
 	// create jobs
 
@@ -78,9 +90,20 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	schedulerSvc.RunJob(ctx, job1)
-	schedulerSvc.RunJob(ctx, job1AnotherInstace)
-	schedulerSvc.RunJob(ctx, job2)
+	err = schedulerSvc.RunJob(ctx, job1)
+	if err != nil {
+		log.Fatal("RunJob")
+	}
+
+	err = schedulerSvc.RunJob(ctx, job1AnotherInstace)
+	if err != nil {
+		log.Fatal("RunJob")
+	}
+
+	err = schedulerSvc.RunJob(ctx, job2)
+	if err != nil {
+		log.Fatal("RunJob")
+	}
 
 	<-ctx.Done()
 }

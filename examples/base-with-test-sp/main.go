@@ -8,7 +8,9 @@ import (
 
 	"github.com/nibi8/scheduler"
 	"github.com/nibi8/scheduler/models"
-	"github.com/nibi8/scheduler/storageproviders/testsp"
+
+	"github.com/nibi8/dlocker"
+	"github.com/nibi8/dlocker/storageproviders/testsp"
 )
 
 func main() {
@@ -16,8 +18,11 @@ func main() {
 	// create storage provider
 	sp := testsp.NewStorageProvider()
 
+	// create locker
+	locker := dlocker.NewLocker(sp)
+
 	// create scheduler
-	schedulerSvc := scheduler.NewScheduler(sp)
+	schedulerSvc := scheduler.NewScheduler(locker)
 
 	// create jobs
 
@@ -45,9 +50,20 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	schedulerSvc.RunJob(ctx, job1)
-	schedulerSvc.RunJob(ctx, job1AnotherInstace)
-	schedulerSvc.RunJob(ctx, job2)
+	err = schedulerSvc.RunJob(ctx, job1)
+	if err != nil {
+		log.Fatal("RunJob")
+	}
+
+	err = schedulerSvc.RunJob(ctx, job1AnotherInstace)
+	if err != nil {
+		log.Fatal("RunJob")
+	}
+
+	err = schedulerSvc.RunJob(ctx, job2)
+	if err != nil {
+		log.Fatal("RunJob")
+	}
 
 	<-ctx.Done()
 }

@@ -3,6 +3,8 @@ package models
 import (
 	"context"
 	"fmt"
+
+	lockmodels "github.com/nibi8/dlocker/models"
 )
 
 type JobAction func(context.Context, Job) error
@@ -35,6 +37,14 @@ type Job struct {
 
 	// Error handler
 	ErrHandler JobErrorHandler
+}
+
+func (job Job) ToLock() (lock lockmodels.Lock, err error) {
+	return lockmodels.NewLock(
+		job.Name, 
+		job.ExecutionDurationSec,
+		job.SpanDurationSec,
+	)
 }
 
 func (j Job) Validate() (err error) {
