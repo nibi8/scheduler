@@ -12,11 +12,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 
-	"github.com/nibi8/scheduler"
-	"github.com/nibi8/scheduler/models"
+	"github.com/p8bin/scheduler"
+	"github.com/p8bin/scheduler/models"
 
-	"github.com/nibi8/dlocker"
-	"github.com/nibi8/dlocker/storageproviders/mongosp"
+	"github.com/p8bin/dlocker"
+	"github.com/p8bin/dlocker/storageproviders/mongosp"
 )
 
 func main() {
@@ -90,6 +90,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
+	fmt.Printf(
+		"[%v] begin { \n",
+		time.Now().Format("15:04:05"),
+	)
+
 	err = schedulerSvc.RunJob(ctx, job1)
 	if err != nil {
 		log.Fatal("RunJob")
@@ -106,6 +111,11 @@ func main() {
 	}
 
 	<-ctx.Done()
+
+	fmt.Printf(
+		"[%v] } end \n",
+		time.Now().Format("15:04:05"),
+	)
 }
 
 func newJob(jobName string, instanceName string) (job models.Job, err error) {

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nibi8/dlocker"
-	lockmodels "github.com/nibi8/dlocker/models"
+	"github.com/p8bin/dlocker"
+	lockmodels "github.com/p8bin/dlocker/models"
 
-	"github.com/nibi8/scheduler/models"
+	"github.com/p8bin/scheduler/models"
 )
 
 // Scheme

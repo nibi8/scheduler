@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nibi8/scheduler/models"
+	"github.com/p8bin/scheduler/models"
 	
-	"github.com/nibi8/dlocker"
-	"github.com/nibi8/dlocker/storageproviders/testsp"
+	"github.com/p8bin/dlocker"
+	"github.com/p8bin/dlocker/storageproviders/testsp"
 )
 
 // todo: add tests

@@ -3,7 +3,7 @@ package scheduler
 import (
 	"context"
 
-	"github.com/nibi8/scheduler/models"
+	"github.com/p8bin/scheduler/models"
 )
 
 // Runs distributed jobs.

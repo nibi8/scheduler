@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	lockmodels "github.com/nibi8/dlocker/models"
+	lockmodels "github.com/p8bin/dlocker/models"
 )
 
 type JobAction func(context.Context, Job) error
