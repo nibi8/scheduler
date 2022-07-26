@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/p8bin/scheduler/models"
-	
+
 	"github.com/p8bin/dlocker"
+	dmodels "github.com/p8bin/dlocker/models"
 	"github.com/p8bin/dlocker/storageproviders/testsp"
 )
 
@@ -18,24 +21,26 @@ func TestNewScheduler(t *testing.T) {
 	locker := dlocker.NewLocker(sp)
 	sc := NewScheduler(locker)
 
-	job, err := models.NewJobEx(
+	lock, err := dmodels.NewLock(
 		"unique-job-name",
 		30,
 		10,
+	)
+	require.NoError(t, err)
+
+	job, err := models.NewJobEx(
+		lock,
 		func(ctx context.Context, job models.Job) error {
 			fmt.Println("start job action")
 			fmt.Println("end before ctx.Done()")
 			return nil
 		}, 0, 0, nil,
 	)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+
 	err = sc.RunJob(ctx, job)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 }

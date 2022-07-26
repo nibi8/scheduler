@@ -4,27 +4,85 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	dmodels "github.com/p8bin/dlocker/models"
 )
 
-// todo: add tests
+func TestValidate(t *testing.T) {
 
-func TestNewJob(t *testing.T) {
-	job, err := NewJobEx(
+	errHandler := func(context.Context, Job, error) {
+	}
+
+	lock, err := dmodels.NewLock(
 		"unique-job-name",
-		int((30 * time.Second).Seconds()),
-		int((10 * time.Second).Seconds()),
+		30,
+		10,
+	)
+	require.NoError(t, err)
+
+	_, err = NewJobEx(
+		lock,
 		func(ctx context.Context, job Job) error {
 			fmt.Println("start job action")
 			fmt.Println("end before ctx.Done()")
 			return nil
-		}, 0, 0, nil,
+		}, 1, 2, errHandler,
 	)
+	require.NoError(t, err)
 
-	if err != nil {
-		t.Error(err)
+	_, err = NewJobEx(
+		dmodels.Lock{},
+		func(ctx context.Context, job Job) error {
+			fmt.Println("start job action")
+			fmt.Println("end before ctx.Done()")
+			return nil
+		}, 1, 2, errHandler,
+	)
+	require.Error(t, err)
+
+	_, err = NewJobEx(
+		lock,
+		nil, 1, 2, errHandler,
+	)
+	require.Error(t, err)
+
+}
+
+func TestNewJob(t *testing.T) {
+	errHandler := func(context.Context, Job, error) {
 	}
 
-	fmt.Println("Total lock period:", job.GetDurationSec())
+	lock, err := dmodels.NewLock(
+		"unique-job-name",
+		30,
+		10,
+	)
+	require.NoError(t, err)
 
+	job, err := NewJob(
+		lock,
+		func(ctx context.Context, job Job) error {
+			fmt.Println("start job action")
+			fmt.Println("end before ctx.Done()")
+			return nil
+		}, errHandler,
+	)
+	require.NoError(t, err)
+
+	jobEx, err := NewJobEx(
+		lock,
+		job.Action, job.PeekTimeoutSec, job.ErrTimeoutSec, job.ErrHandler,
+	)
+	require.NoError(t, err)
+
+	assert.Equal(t, fmt.Sprintf("%+v", job), fmt.Sprintf("%+v", jobEx))
+
+	assert.NotEmpty(t, job.Lock)
+	assert.NotEmpty(t, job.Action)
+	assert.NotEmpty(t, job.PeekTimeoutSec)
+	assert.NotEmpty(t, job.ErrTimeoutSec)
+	assert.NotEmpty(t, job.ErrHandler)
 }

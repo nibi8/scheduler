@@ -12,13 +12,6 @@ import (
 	"github.com/p8bin/scheduler/models"
 )
 
-// Scheme
-// Job "super-job" with 5 min duration:
-//  Instace 1: [set lock success] [running within the duration of the lock (5 minutes)] [try set lock] ...
-//		Must complete execution before the lock expires.
-//  Instace 2:       [set lock fail] [sleep during lock (5 min)                       ] [try set lock] ...
-// Execution of other jobs is not affected.
-
 type SchedulerImp struct {
 	locker dlocker.Locker
 }
@@ -36,15 +29,12 @@ func (s *SchedulerImp) RunJob(
 	ctx context.Context,
 	job models.Job,
 ) (err error) {
-	lock, err := job.ToLock()
-	if err != nil {
-		return err
-	}
+	lock := job.Lock
 
 	// todo: ? catch panic
 	go func() {
 		for {
-			_, _, err := s.locker.LockWithWait(ctx, lock)
+			lockCtx, _, err := s.locker.LockWithWait(ctx, lock)
 			if err != nil {
 				if errors.Is(err, lockmodels.ErrNoLuck) {
 					// no luck
@@ -54,7 +44,7 @@ func (s *SchedulerImp) RunJob(
 					time.Sleep(time.Duration(job.ErrTimeoutSec) * time.Second)
 				}
 			} else {
-				_, err := s.runJobAction(ctx, job)
+				err := s.runJobAction(lockCtx, job)
 				if err != nil {
 					job.ErrHandler(ctx, job, err)
 					time.Sleep(time.Duration(job.ErrTimeoutSec) * time.Second)
@@ -75,19 +65,17 @@ func (s *SchedulerImp) RunJob(
 func (s *SchedulerImp) runJobAction(
 	ctx context.Context,
 	job models.Job,
-) (cancel context.CancelFunc, err error) {
+) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("recover panic %v", r)
 		}
 	}()
 
-	ctx, cancel = context.WithTimeout(ctx, time.Duration(job.ExecutionDurationSec)*time.Second)
-
 	err = job.Action(ctx, job)
 	if err != nil {
-		return cancel, err
+		return err
 	}
 
-	return cancel, nil
+	return nil
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 	"os"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,6 +17,8 @@ import (
 
 	"github.com/p8bin/dlocker"
 	"github.com/p8bin/dlocker/storageproviders/mongosp"
+
+	dmodels "github.com/p8bin/dlocker/models"
 )
 
 func main() {
@@ -123,7 +125,16 @@ func newJob(jobName string, instanceName string) (job models.Job, err error) {
 	if instanceName != "" {
 		jobPrintName += " " + instanceName
 	}
-	job, err = models.NewJobEx(jobName, 10, 5, func(ctx context.Context, job models.Job) error {
+
+	lock, err := dmodels.NewLock(
+		jobName,
+		10, 5,
+	)
+	if err != nil {
+		return job, err
+	}
+
+	job, err = models.NewJobEx(lock, func(ctx context.Context, job models.Job) error {
 		for i := 0; i < 5; i++ {
 			if ctx.Err() != nil {
 				return ctx.Err()
@@ -141,7 +152,7 @@ func newJob(jobName string, instanceName string) (job models.Job, err error) {
 		}
 		return nil
 	}, 5, 5, func(ctx context.Context, job models.Job, err error) {
-		fmt.Println(job.Name, err)
+		fmt.Println(job.Lock.Name, err)
 	})
 	if err != nil {
 		return job, err
