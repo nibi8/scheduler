@@ -58,6 +58,22 @@ func (j Job) Validate() (err error) {
 	return nil
 }
 
+func NewJobPnc(
+	lock lockmodels.Lock,
+	action JobAction,
+	errHandler JobErrorHandler,
+) (job Job) {
+	job, err := NewJob(
+		lock,
+		action,
+		errHandler,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return job
+}
+
 func NewJob(
 	lock lockmodels.Lock,
 	action JobAction,
@@ -70,6 +86,26 @@ func NewJob(
 		DefaultErrTimeoutSec,
 		errHandler,
 	)
+}
+
+func NewJobExPnc(
+	lock lockmodels.Lock,
+	action JobAction,
+	peekTimeoutSec int,
+	errTimeoutSec int,
+	errHandler JobErrorHandler,
+) (job Job) {
+	job, err := NewJobEx(
+		lock,
+		action,
+		peekTimeoutSec,
+		errTimeoutSec,
+		errHandler,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return job
 }
 
 func NewJobEx(

@@ -86,3 +86,36 @@ func TestNewJob(t *testing.T) {
 	assert.NotEmpty(t, job.ErrTimeoutSec)
 	assert.NotEmpty(t, job.ErrHandler)
 }
+
+func TestNewJobPnc(t *testing.T) {
+	errHandler := func(context.Context, Job, error) {
+	}
+
+	lock := dmodels.NewLockPnc(
+		"unique-job-name",
+		30,
+		10,
+	)
+
+	job := NewJobPnc(
+		lock,
+		func(ctx context.Context, job Job) error {
+			fmt.Println("start job action")
+			fmt.Println("end before ctx.Done()")
+			return nil
+		}, errHandler,
+	)
+
+	jobEx := NewJobExPnc(
+		lock,
+		job.Action, job.PeekTimeoutSec, job.ErrTimeoutSec, job.ErrHandler,
+	)
+
+	assert.Equal(t, fmt.Sprintf("%+v", job), fmt.Sprintf("%+v", jobEx))
+
+	assert.NotEmpty(t, job.Lock)
+	assert.NotEmpty(t, job.Action)
+	assert.NotEmpty(t, job.PeekTimeoutSec)
+	assert.NotEmpty(t, job.ErrTimeoutSec)
+	assert.NotEmpty(t, job.ErrHandler)
+}
